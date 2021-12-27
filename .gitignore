@@ -2,5 +2,6 @@
 .local
 *.lock
 *.log
+*.vsix
 out
 node_modules
