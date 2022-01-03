@@ -1,7 +1,7 @@
 example omega edit extension
 ===
 
-Example VS Code plugin that uses embedded omega bindings to generate content.
+Example VS Code plugin that uses embedded [Omega Edit](https://github.com/scholarsmate/omega-edit) bindings to generate content.
 
 
 ### requires
@@ -23,4 +23,5 @@ Type omega at the command palette (`ctrl+shift+p`)
 
 
 ### references
+- https://github.com/scholarsmate/omega-edit
 - https://github.com/microsoft/vscode-extension-samples
