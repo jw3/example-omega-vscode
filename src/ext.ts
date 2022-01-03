@@ -1,26 +1,39 @@
 import * as vscode from 'vscode';
+import * as omega_edit from 'omega-edit';
 
-export function activate(context: vscode.ExtensionContext) {
-    const panel = vscode.window.createWebviewPanel(
-        'viewport', // Identifies the type of the webview. Used internally
-        'Ω Edit', // Title of the panel displayed to the user
-        vscode.ViewColumn.One, // Editor column to show the new webview panel in.
-        {} // Webview options. More on these later.
-    );
+export function activate(ctx: vscode.ExtensionContext) {
+    ctx.subscriptions.push(
+        vscode.commands.registerCommand('omega.simple', async () => {
+            const panel = vscode.window.createWebviewPanel(
+                'viewport',
+                'Ω Edit',
+                vscode.ViewColumn.One,
+                {}
+            );
 
-    panel.webview.html = getWebviewContent();
+            let session = omega_edit.omega_edit_create_session("", null, null)
+            let viewport = omega_edit.omega_edit_create_viewport(session, 0, 100, null, null)
+            omega_edit.omega_edit_insert(session, 0, "Hello Weird!!!!", 15);
+            omega_edit.omega_edit_overwrite(session, 7, "orl", 3)
+            omega_edit.omega_edit_delete(session, 11, 3)
+            let txt = omega_edit.omega_viewport_get_string(viewport);
+            omega_edit.omega_edit_destroy_session(session);
+
+            panel.webview.html = getWebviewContent(txt);
+        })
+    )
 }
 
-function getWebviewContent() {
+function getWebviewContent(txt: string) {
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cat Coding</title>
+    <title>Omega!</title>
 </head>
 <body>
-    <img src="https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif" width="300" />
+    <div>${txt}</div>
 </body>
 </html>`;
 }
