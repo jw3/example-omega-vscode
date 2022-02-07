@@ -5,3 +5,5 @@
 *.vsix
 out
 node_modules
+target
+.bsp
