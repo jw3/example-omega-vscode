@@ -1,8 +1,8 @@
-package omega.server
+package omega.websocket.server
 
 import akka.actor.{Actor, Props}
 import omega.scaladsl.api
-import omega.server.protocol._
+import protocol._
 
 import java.nio.file.Path
 

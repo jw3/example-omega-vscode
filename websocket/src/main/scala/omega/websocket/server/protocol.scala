@@ -1,4 +1,4 @@
-package omega.server
+package omega.websocket.server
 
 import akka.actor.ActorRef
 import spray.json.derived.semiauto.deriveFormat

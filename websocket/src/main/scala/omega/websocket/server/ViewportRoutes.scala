@@ -1,4 +1,4 @@
-package omega.server
+package omega.websocket.server
 
 import akka.actor.ActorRef
 import akka.http.scaladsl.model.ws.TextMessage
@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.stream.scaladsl.{Flow, Sink, Source}
-import omega.server.protocol._
+import omega.websocket.server.protocol._
 import spray.json._
 
 import scala.util.{Failure, Success, Try}

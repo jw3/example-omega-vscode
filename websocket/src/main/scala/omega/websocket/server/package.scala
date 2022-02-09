@@ -1,4 +1,4 @@
-package omega
+package omega.websocket
 
 import omega.scaladsl.api.Omega
 

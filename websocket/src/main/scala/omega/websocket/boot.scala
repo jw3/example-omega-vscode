@@ -1,15 +1,15 @@
-package omega
+package omega.websocket
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.stream.ActorMaterializer
-import omega.server.{Session, SessionRoutes, ViewportRoutes}
 import akka.http.scaladsl.server.Directives._
+import akka.stream.ActorMaterializer
+import omega.websocket.server.{Session, SessionRoutes, ViewportRoutes}
 
 import java.nio.file.Paths
 
 object boot extends App {
-  implicit val system = ActorSystem("omega")
+  implicit val system = ActorSystem("omega-websocket")
   implicit val mat = ActorMaterializer()
 
   val datafile = args.headOption.map(Paths.get(_))
