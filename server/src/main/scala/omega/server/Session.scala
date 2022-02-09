@@ -13,8 +13,9 @@ object Session {
 
 class Session(session: api.Session) extends Actor {
   def receive: Receive = {
-    case ConnectView(ws, offset, length) =>
-      session.viewCb(offset, length, v => ws ! ViewUpdated(v.data()))
+    case ConnectView(ws, view) =>
+      session.viewCb(view.offset, view.length, v => ws ! ViewUpdated(view.id, v.data()))
+      println(s"registered view: $view")
 
     case Push(data)              => session.push(data)
     case Overwrite(data, offset) => session.overwrite(data, offset)
