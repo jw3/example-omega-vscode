@@ -67,3 +67,4 @@ lazy val grpc = project
     libraryDependencies ++= Seq()
   )
   .enablePlugins(commonPlugins: _*)
+  .enablePlugins(AkkaGrpcPlugin)

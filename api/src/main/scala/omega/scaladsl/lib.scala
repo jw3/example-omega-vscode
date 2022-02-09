@@ -2,7 +2,7 @@ package omega.scaladsl
 
 import jnr.ffi.annotations.Delegate
 import jnr.ffi.{LibraryLoader, Pointer}
-import omega.scaladsl.api.{Omega, Session, Viewport}
+import omega.scaladsl.api.{Omega, Session, Version, Viewport}
 
 import java.nio.file.Path
 
@@ -11,6 +11,10 @@ object lib {
 }
 
 private trait OmegaFFI extends Omega {
+  def omega_version_major(): Int
+  def omega_version_minor(): Int
+  def omega_version_patch(): Int
+
   def omega_edit_create_session(path: String, cb: Pointer, userData: Pointer): Pointer
   def omega_edit_insert(p: Pointer, offset: Long, str: String, len: Long): Long
   def omega_edit_overwrite(p: Pointer, offset: Long, str: String, len: Long): Long
@@ -24,6 +28,8 @@ private trait OmegaFFI extends Omega {
     omega_edit_create_session(path.map(_.toString).orNull, null, null),
     this
   )
+
+  def version(): Version = Version(omega_version_major(), omega_version_minor(), omega_version_patch())
 }
 
 private class SessionImpl(p: Pointer, i: OmegaFFI) extends Session {
