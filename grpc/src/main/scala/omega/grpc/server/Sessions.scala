@@ -27,7 +27,6 @@ object Sessions {
   case class Err(reason: Status) extends Result
 
   trait Data {
-    def id: String
     def data: ByteString
   }
 

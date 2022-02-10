@@ -12,12 +12,13 @@ import io.grpc.Status
 import omega.grpc.server.EditorService.{grpcFailure, opForRequest}
 import omega.grpc.server.Session.{DestroyView, Save, View}
 import omega.grpc.server.Sessions._
+import omega.grpc.server.Viewport.Events
 import omega_edit.ChangeKind.{CHANGE_DELETE, CHANGE_INSERT, CHANGE_OVERWRITE}
 import omega_edit._
 
 import java.nio.file.Paths
-import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, Future}
 
 class EditorService(implicit val system: ActorSystem, implicit val mat: Materializer) extends Editor {
   private implicit val timeout: Timeout = Timeout(1.second)
@@ -88,7 +89,7 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
         case None => grpcFailure(Status.INVALID_ARGUMENT, "undefined change kind")
         case Some(op) =>
           (sessions ? SessionOp(oid.id, op)).mapTo[Result].flatMap {
-            case Ok(r)  => Future.successful(ChangeResponse(in.sessionId))
+            case Ok(id) => Future.successful(ChangeResponse(Some(ObjectId(id))))
             case Err(c) => grpcFailure(c)
           }
       }
@@ -105,7 +106,16 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
     */
   def subscribeOnChangeSession(in: ObjectId): Source[SessionChange, NotUsed] = ???
 
-  def subscribeOnChangeViewport(in: ObjectId): Source[ViewportChange, NotUsed] = ???
+  def subscribeOnChangeViewport(in: ObjectId): Source[ViewportChange, NotUsed] = in match {
+    case Viewport.Id(sid, vid) =>
+      val f = (sessions ? ViewportOp(sid, vid, Viewport.Watch)).mapTo[Result].map {
+        case ok: Ok with Events => ok.stream.map(u => ViewportChange(Some(ObjectId(vid))))
+        case _                  => Source.empty
+      }
+      Await.result(f, 1.second)
+
+    case _ => Source.failed(new GrpcServiceException(Status.INVALID_ARGUMENT.withDescription("malformed viewport id")))
+  }
 }
 
 object EditorService {

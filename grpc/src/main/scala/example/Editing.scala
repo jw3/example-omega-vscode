@@ -20,6 +20,7 @@ object Editing extends App {
     _ = println(v.getViewportId.id)
     d <- svc.getViewportData(ViewportDataRequest(v.viewportId))
     _ = println(s"original data: ${d.data.toStringUtf8.take(20)}...")
+    _ <- svc.subscribeOnChangeViewport(v.getViewportId).take(1).runForeach(c => println(".:Viewport changed:."))
     _ <- svc.submitChange(
       ChangeRequest(s.sessionId, ChangeKind.CHANGE_OVERWRITE, 0, 0, Some(ByteString.copyFromUtf8("Hello!")))
     )

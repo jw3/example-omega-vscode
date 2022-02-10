@@ -1,12 +1,16 @@
 package omega.grpc.server
 
+import akka.NotUsed
 import akka.actor.{Actor, PoisonPill, Props}
+import akka.stream.OverflowStrategy
+import akka.stream.scaladsl.Source
 import io.grpc.Status
 import omega.grpc.server.Session._
 import omega.grpc.server.Sessions.{Err, Ok}
 import omega.scaladsl.api
 
 import java.nio.file.Path
+import scala.collection.immutable.HashMap
 
 object Session {
   def props(data: Option[Path]): Props = {
@@ -33,14 +37,21 @@ object Session {
 
 class Session(session: api.Session) extends Actor {
   val sessionId: String = self.path.name
+  var streams = HashMap.empty[String, Source[Viewport.Updated, NotUsed]]
 
   def receive: Receive = {
     case View(off, cap) =>
-      val v = session.view(off, cap)
+      import context.system
       val vid = Viewport.Id.uuid()
-      context.actorOf(Viewport.props(v), vid)
-      println(s"created viewport $vid")
-      sender() ! Ok(s"$sessionId-$vid")
+      val fqid = s"$sessionId-$vid"
+
+      val (ws, stream) = Source.queue[Viewport.Updated](10, OverflowStrategy.fail).preMaterialize()
+      streams += (fqid -> stream)
+
+      val v = session.viewCb(off, cap, v => ws.queue.offer(Viewport.Updated(fqid, v.data())))
+      context.actorOf(Viewport.props(v, stream), vid)
+
+      sender() ! Ok(fqid)
 
     case DestroyView(vid) =>
       context.child(vid) match {
