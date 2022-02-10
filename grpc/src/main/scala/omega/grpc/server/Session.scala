@@ -1,6 +1,9 @@
 package omega.grpc.server
 
-import akka.actor.{Actor, Props}
+import akka.actor.{Actor, PoisonPill, Props}
+import io.grpc.Status
+import omega.grpc.server.Session.{DestroyView, View}
+import omega.grpc.server.Sessions.{Err, Ok}
 import omega.scaladsl.api
 
 import java.nio.file.Path
@@ -16,10 +19,30 @@ object Session {
     }
     Props(new Session(omega))
   }
+
+  trait Op
+  case class Save(to: Path) extends Op
+  case class View(offset: Long, capacity: Long) extends Op
+  case class DestroyView(id: String) extends Op
 }
 
 class Session(session: api.Session) extends Actor {
+  val sessionId: String = self.path.name
+
   def receive: Receive = {
-    case _ =>
+    case View(off, cap) =>
+      val v = session.view(off, cap)
+      val vid = Viewport.Id.uuid()
+      context.actorOf(Viewport.props(v), vid)
+      println(s"created viewport $vid")
+      sender() ! Ok(s"$sessionId-$vid")
+
+    case DestroyView(vid) =>
+      context.child(vid) match {
+        case None => sender() ! Err(Status.NOT_FOUND)
+        case Some(s) =>
+          s ! PoisonPill
+          sender() ! Ok(vid)
+      }
   }
 }
