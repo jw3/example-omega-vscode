@@ -26,5 +26,10 @@ object Editing extends App {
     )
     d <- svc.getViewportData(ViewportDataRequest(v.viewportId))
     _ = println(s"updated data: ${d.data.toStringUtf8.take(20)}...")
+    _ <- svc.getViewportData(ViewportDataRequest(None)).recover {
+      case e =>
+        // expecting viewport id required message
+        println(s"err: $e")
+    }
   } {}
 }

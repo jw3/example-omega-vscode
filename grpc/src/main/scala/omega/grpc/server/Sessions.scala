@@ -73,8 +73,8 @@ class Sessions extends Actor with ActorLogging {
       context.child(sid) match {
         case None =>
         case Some(s) =>
-          val sel = context.actorSelection(s.path / vid)
-          sel
+          context
+            .actorSelection(s.path / vid)
             .resolveOne()
             .onComplete {
               case Success(v) => v.tell(op, replyTo)
