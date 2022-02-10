@@ -41,6 +41,9 @@ private class SessionImpl(p: Pointer, i: OmegaFFI) extends Session {
   def delete(offset: Long, len: Long): Unit =
     i.omega_edit_delete(p, offset, len)
 
+  def insert(s: String, offset: Long): Unit =
+    i.omega_edit_insert(p, offset, s, 0)
+
   def overwrite(s: String, offset: Long): Unit =
     i.omega_edit_overwrite(p, offset, s, 0)
 

@@ -2,7 +2,7 @@ package omega.grpc.server
 
 import akka.actor.{Actor, PoisonPill, Props}
 import io.grpc.Status
-import omega.grpc.server.Session.{DestroyView, View}
+import omega.grpc.server.Session._
 import omega.grpc.server.Sessions.{Err, Ok}
 import omega.scaladsl.api
 
@@ -24,6 +24,11 @@ object Session {
   case class Save(to: Path) extends Op
   case class View(offset: Long, capacity: Long) extends Op
   case class DestroyView(id: String) extends Op
+
+  case class Push(data: String) extends Op
+  case class Delete(offset: Long, length: Long) extends Op
+  case class Insert(data: String, offset: Long) extends Op
+  case class Overwrite(data: String, offset: Long) extends Op
 }
 
 class Session(session: api.Session) extends Actor {
@@ -44,5 +49,21 @@ class Session(session: api.Session) extends Actor {
           s ! PoisonPill
           sender() ! Ok(vid)
       }
+
+    case Push(data) =>
+      session.push(data)
+      sender() ! Ok(sessionId)
+
+    case Insert(data, offset) =>
+      session.insert(data, offset)
+      sender() ! Ok(sessionId)
+
+    case Overwrite(data, offset) =>
+      session.overwrite(data, offset)
+      sender() ! Ok(sessionId)
+
+    case Delete(offset, length) =>
+      session.delete(offset, length)
+      sender() ! Ok(sessionId)
   }
 }

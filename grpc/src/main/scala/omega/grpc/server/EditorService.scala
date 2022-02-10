@@ -9,9 +9,10 @@ import akka.stream.scaladsl.Source
 import akka.util.Timeout
 import com.google.protobuf.empty.Empty
 import io.grpc.Status
-import omega.grpc.server.EditorService.grpcFailure
+import omega.grpc.server.EditorService.{grpcFailure, opForRequest}
 import omega.grpc.server.Session.{DestroyView, Save, View}
 import omega.grpc.server.Sessions._
+import omega_edit.ChangeKind.{CHANGE_DELETE, CHANGE_INSERT, CHANGE_OVERWRITE}
 import omega_edit._
 
 import java.nio.file.Paths
@@ -19,7 +20,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
 class EditorService(implicit val system: ActorSystem, implicit val mat: Materializer) extends Editor {
-  private implicit val timeout = Timeout(1.second)
+  private implicit val timeout: Timeout = Timeout(1.second)
   private val sessions = system.actorOf(Sessions.props())
   import system.dispatcher
 
@@ -80,7 +81,18 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
     case Some(_) => grpcFailure(Status.INVALID_ARGUMENT, "malformed viewport id")
   }
 
-  def submitChange(in: ChangeRequest): Future[ChangeResponse] = ???
+  def submitChange(in: ChangeRequest): Future[ChangeResponse] = in.sessionId match {
+    case None => grpcFailure(Status.INVALID_ARGUMENT, "session id required")
+    case Some(oid) =>
+      opForRequest(in) match {
+        case None => grpcFailure(Status.INVALID_ARGUMENT, "undefined change kind")
+        case Some(op) =>
+          (sessions ? SessionOp(oid.id, op)).mapTo[Result].flatMap {
+            case Ok(r)  => Future.successful(ChangeResponse(in.sessionId))
+            case Err(c) => grpcFailure(c)
+          }
+      }
+  }
 
   def getChangeDetails(in: SessionChange): Future[ChangeDetailsResponse] = ???
 
@@ -99,4 +111,13 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
 object EditorService {
   def grpcFailure(status: Status, message: String = "") =
     Future.failed(new GrpcServiceException(if (message.nonEmpty) status.withDescription(message) else status))
+
+  def opForRequest(in: ChangeRequest): Option[Session.Op] = in.data.map(_.toStringUtf8).flatMap { data =>
+    in.kind match {
+      case CHANGE_INSERT    => Some(Session.Insert(data, in.offset))
+      case CHANGE_DELETE    => Some(Session.Delete(in.offset, in.length))
+      case CHANGE_OVERWRITE => Some(Session.Overwrite(data, in.offset))
+      case _                => None
+    }
+  }
 }

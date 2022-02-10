@@ -4,6 +4,7 @@ import omega.scaladsl.ViewportCallback
 
 trait Session {
   def push(s: String): Unit
+  def insert(s: String, offset: Long): Unit
   def overwrite(s: String, offset: Long): Unit
   def delete(offset: Long, len: Long): Unit
 
