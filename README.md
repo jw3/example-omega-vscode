@@ -3,13 +3,21 @@ example omega edit extension
 
 Example VS Code plugin that uses embedded [Omega Edit](https://github.com/scholarsmate/omega-edit) bindings to generate content.
 
+## build and launch
 
-### requires
-- bindings compiled against Electron Node v14.16.0
-- VS Code v1.60-1.63
+Install the Omega Edit shared library in ld searched path or set `LD_LIBRARY_PATH`.
 
+Omega Edit shared library >= `53f4c4240b85a6e5c7cf2ff8c65c92082421a2d7` suggested.
 
-### build and launch
+### backend 
+
+`sbt compile grpc/run`
+or
+`sbt compile websocket/run`
+
+### frontend
+
+At this time the frontend is only wired for the websocket backend
 
 ```
 yarn

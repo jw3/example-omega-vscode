@@ -3,6 +3,7 @@ package omega.grpc.server
 import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.grpc.GrpcServiceException
+import akka.http.scaladsl.Http
 import akka.pattern.ask
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
@@ -132,4 +133,7 @@ object EditorService {
       case _                => None
     }
   }
+
+  def bind(iface: String = "127.0.0.1", port: Int = 9000)(implicit system: ActorSystem): Future[Http.ServerBinding] =
+    Http().newServerAt(iface, port).bind(EditorHandler(new EditorService))
 }
