@@ -13,7 +13,6 @@ import io.grpc.Status
 import omega.grpc.server.EditorService._
 import omega.grpc.server.Session._
 import omega.grpc.server.Sessions._
-import omega.grpc.server.Viewport.Events
 import omega_edit.ChangeKind.{CHANGE_DELETE, CHANGE_INSERT, CHANGE_OVERWRITE}
 import omega_edit._
 
@@ -116,14 +115,21 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
   /**
     * Event streams
     */
-  def subscribeOnChangeSession(in: ObjectId): Source[SessionChange, NotUsed] = ???
+  def subscribeOnChangeSession(in: ObjectId): Source[SessionChange, NotUsed] = {
+    val f = (sessions ? SessionOp(in.id, Session.Watch)).mapTo[Result].map {
+      case ok: Ok with Session.Events =>
+        ok.stream.map(u => SessionChange(Some(ObjectId(u.id))))
+      case _ => Source.failed(grpcFailure(Status.UNKNOWN))
+    }
+    Await.result(f, 1.second)
+  }
 
   def subscribeOnChangeViewport(in: ObjectId): Source[ViewportChange, NotUsed] = in match {
     case Viewport.Id(sid, vid) =>
       val f = (sessions ? ViewportOp(sid, vid, Viewport.Watch)).mapTo[Result].map {
-        case ok: Ok with Events =>
+        case ok: Ok with Viewport.Events =>
           ok.stream.map(u => ViewportChange(Some(ObjectId(u.id)), serial = u.change.map(_.id())))
-        case _ => Source.empty
+        case _ => Source.failed(grpcFailure(Status.UNKNOWN))
       }
       Await.result(f, 1.second)
     case _ => Source.failed(new GrpcServiceException(Status.INVALID_ARGUMENT.withDescription("malformed viewport id")))

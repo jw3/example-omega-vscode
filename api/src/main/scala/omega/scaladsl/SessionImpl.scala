@@ -4,8 +4,6 @@ import jnr.ffi.Pointer
 import omega.scaladsl.api._
 
 private[scaladsl] class SessionImpl(p: Pointer, i: OmegaFFI) extends Session {
-  var callbacks = List.empty[ViewportCallback]
-
   def push(s: String): ChangeResult =
     Edit(i.omega_edit_insert(p, 0, s, 0))
 
@@ -24,7 +22,7 @@ private[scaladsl] class SessionImpl(p: Pointer, i: OmegaFFI) extends Session {
   }
 
   def viewCb(offset: Long, size: Long, cb: ViewportCallback): Viewport = {
-    callbacks +:= cb
+    lib.callbacks +:= cb
     val vp = i.omega_edit_create_viewport(p, offset, size, cb, null)
     new ViewportImpl(vp, i)
   }

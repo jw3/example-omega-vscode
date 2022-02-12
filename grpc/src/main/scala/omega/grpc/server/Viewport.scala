@@ -14,6 +14,10 @@ import java.util.UUID
 
 object Viewport {
   type EventStream = Source[Viewport.Updated, NotUsed]
+  trait Events {
+    def stream: EventStream
+  }
+
   def props(view: api.Viewport, stream: EventStream) = Props(new Viewport(view, stream))
 
   case class Id(session: String, view: String)
@@ -31,10 +35,6 @@ object Viewport {
   case object Get extends Op
   case object Watch extends Op
   case class Updated(id: String, data: String, change: Option[Change])
-
-  trait Events {
-    def stream: EventStream
-  }
 }
 
 class Viewport(view: api.Viewport, events: EventStream) extends Actor with ActorLogging {

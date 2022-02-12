@@ -8,8 +8,8 @@ trait ViewportCallback {
   @Delegate def invoke(p: Pointer, c: Pointer): Unit = {
     val i = lib.omega.asInstanceOf[OmegaFFI]
     val change = c.address() match {
-      case 0 | 1 => None
-      case _     => Some(new ChangeImpl(c, i))
+      case 0 | 1 | 2 => None
+      case _         => Some(new ChangeImpl(c, i))
     }
     handle(new ViewportImpl(p, i), change)
   }

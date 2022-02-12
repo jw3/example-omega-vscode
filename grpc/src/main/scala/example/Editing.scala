@@ -30,29 +30,30 @@ object Editing extends App {
 object Demonstration {
   // both the client and service implement Editor trait
   // this is a great win for unit testing of the service
-  def apply(svc: Editor)(implicit system: ActorSystem): Future[Unit] = {
+  def apply(editor: Editor)(implicit system: ActorSystem): Future[Unit] = {
     import system.dispatcher
 
     for {
-      s <- svc.createSession(CreateSessionRequest(Some("build.sbt")))
+      s <- editor.createSession(CreateSessionRequest(Some("build.sbt")))
       _ = println(s.getSessionId.id)
-      v <- svc.createViewport(CreateViewportRequest(s.sessionId, 1000))
+      _ = editor.subscribeOnChangeSession(s.getSessionId).runForeach(_ => println(".:Session change event:."))
+      v <- editor.createViewport(CreateViewportRequest(s.sessionId, 1000))
       _ = println(v.getViewportId.id)
-      d <- svc.getViewportData(ViewportDataRequest(v.viewportId))
+      d <- editor.getViewportData(ViewportDataRequest(v.viewportId))
       _ = println(s"[source data] ${d.data.toStringUtf8.take(20)}...")
-      _ <- svc.subscribeOnChangeViewport(v.getViewportId).take(1).runForeach(c => println(".:Viewport change event:."))
-      _ <- svc.submitChange(
+      _ = editor.subscribeOnChangeViewport(v.getViewportId).runForeach(_ => println(".:Viewport change event:."))
+      _ <- editor.submitChange(
         ChangeRequest(s.sessionId, ChangeKind.CHANGE_OVERWRITE, 0, 0, Some(ByteString.copyFromUtf8("********")))
       )
-      d <- svc.getViewportData(ViewportDataRequest(v.viewportId))
+      d <- editor.getViewportData(ViewportDataRequest(v.viewportId))
       _ = println(s"[edited data] ${d.data.toStringUtf8.take(20)}...")
-      _ <- svc.getViewportData(ViewportDataRequest(None)).recover {
+      _ <- editor.getViewportData(ViewportDataRequest(None)).recover {
         case e =>
           // expecting viewport id required message
           println(s"err: $e")
       }
       _ = println()
-      _ <- system.terminate()
+      _ = system.terminate()
     } yield ()
   }
 }

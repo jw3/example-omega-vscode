@@ -1,9 +1,13 @@
 package omega.grpc.server
 
 import akka.actor.{Actor, ActorLogging, PoisonPill, Props}
+import akka.stream.OverflowStrategy
+import akka.stream.scaladsl.Source
 import akka.util.Timeout
 import com.google.protobuf.ByteString
 import io.grpc.Status
+import omega.scaladsl.api
+import omega.scaladsl.api.SessionCallback
 
 import java.nio.file.Path
 import java.util.{Base64, UUID}
@@ -34,6 +38,14 @@ object Sessions {
     case None    => UUID.randomUUID().toString.take(8)
     case Some(p) => Base64.getEncoder.encodeToString(p.toString.getBytes)
   }
+
+  private def sessionFor(path: Option[Path], cb: SessionCallback): api.Session = path match {
+    case None =>
+      val session = OmegaLib.newSessionCb(None, cb)
+      session.push(List.fill(10000)(" ").mkString)
+      session
+    case path => OmegaLib.newSessionCb(path, cb)
+  }
 }
 
 class Sessions extends Actor with ActorLogging {
@@ -47,7 +59,10 @@ class Sessions extends Actor with ActorLogging {
         case Some(_) =>
           sender() ! Err(Status.ALREADY_EXISTS)
         case None =>
-          context.actorOf(Session.props(path), id)
+          import context.system
+          val (input, stream) = Source.queue[Session.Updated](10, OverflowStrategy.fail).preMaterialize()
+          val s = sessionFor(path, _ => input.queue.offer(Session.Updated(id)))
+          context.actorOf(Session.props(s, stream), id)
           sender() ! Ok(id)
       }
 
