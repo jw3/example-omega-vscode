@@ -98,9 +98,8 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
 
   def getChangeDetails(in: SessionChange): Future[ChangeDetailsResponse] = ???
 
-  def unsubscribeOnChangeSession(in: ObjectId): Future[ObjectId] = ???
-
-  def unsubscribeOnChangeViewport(in: ObjectId): Future[ObjectId] = ???
+  def unsubscribeOnChangeSession(in: ObjectId): Future[ObjectId] = Future.successful(in)
+  def unsubscribeOnChangeViewport(in: ObjectId): Future[ObjectId] = Future.successful(in)
 
   /**
     * Event streams

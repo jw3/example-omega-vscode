@@ -1,7 +1,5 @@
 package omega.scaladsl.api
 
-import omega.scaladsl.ViewportCallback
-
 trait Session {
   def push(s: String): Unit
   def insert(s: String, offset: Long): Unit
