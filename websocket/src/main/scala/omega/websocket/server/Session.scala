@@ -22,7 +22,7 @@ object Session {
 class Session(session: api.Session) extends Actor {
   def receive: Receive = {
     case ConnectView(ws, view) =>
-      session.viewCb(view.offset, view.length, v => {
+      session.viewCb(view.offset, view.length, (v, _) => {
         println(s"fired ${view.id}!")
         ws ! ViewUpdated(view.id, v.data())
       })

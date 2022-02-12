@@ -2,11 +2,13 @@ package omega.scaladsl.api
 
 import jnr.ffi.Pointer
 import jnr.ffi.annotations.Delegate
-import omega.scaladsl.{lib, OmegaFFI, ViewportImpl}
+import omega.scaladsl.{lib, ChangeImpl, OmegaFFI, ViewportImpl}
 
 trait ViewportCallback {
-  @Delegate def invoke(p: Pointer, change: Pointer): Unit =
-    handle(new ViewportImpl(p, lib.omega.asInstanceOf[OmegaFFI]))
+  @Delegate def invoke(p: Pointer, c: Pointer): Unit = {
+    val i = lib.omega.asInstanceOf[OmegaFFI]
+    handle(new ViewportImpl(p, i), new ChangeImpl(c, i))
+  }
 
-  def handle(v: Viewport): Unit
+  def handle(v: Viewport, change: Change): Unit
 }

@@ -43,7 +43,7 @@ class Session(session: api.Session) extends Actor {
       val fqid = s"$sessionId-$vid"
 
       val (ws, stream) = Source.queue[Viewport.Updated](10, OverflowStrategy.fail).preMaterialize()
-      val v = session.viewCb(off, cap, v => ws.queue.offer(Viewport.Updated(fqid, v.data())))
+      val v = session.viewCb(off, cap, (v, _) => ws.queue.offer(Viewport.Updated(fqid, v.data())))
       context.actorOf(Viewport.props(v, stream), vid)
 
       sender() ! Ok(fqid)

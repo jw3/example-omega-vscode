@@ -6,7 +6,7 @@ import omega.scaladsl.api.{Omega, Session, Version, ViewportCallback}
 import java.nio.file.Path
 
 object lib {
-  val omega: Omega = LibraryLoader.create(classOf[OmegaFFI]).load("omega_edit")
+  val omega: Omega = LibraryLoader.create(classOf[OmegaFFI]).failImmediately().load("omega_edit")
 }
 
 private trait OmegaFFI extends Omega {
@@ -22,6 +22,11 @@ private trait OmegaFFI extends Omega {
 
   def omega_viewport_get_length(p: Pointer): Long
   def omega_viewport_get_data(p: Pointer): String
+
+  def omega_change_get_serial(p: Pointer): Long
+  def omega_change_get_offset(p: Pointer): Long
+  def omega_change_get_length(p: Pointer): Long
+  def omega_change_get_kind_as_char(p: Pointer): String
 
   def newSession(path: Option[Path]): Session = new SessionImpl(
     omega_edit_create_session(path.map(_.toString).orNull, null, null),
