@@ -8,4 +8,6 @@ trait Session {
 
   def view(offset: Long, size: Long): Viewport
   def viewCb(offset: Long, size: Long, cb: ViewportCallback): Viewport
+
+  def findChange(id: Long): Option[Change]
 }

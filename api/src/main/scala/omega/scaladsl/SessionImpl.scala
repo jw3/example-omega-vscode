@@ -28,6 +28,11 @@ private[scaladsl] class SessionImpl(p: Pointer, i: OmegaFFI) extends Session {
     val vp = i.omega_edit_create_viewport(p, offset, size, cb, null)
     new ViewportImpl(vp, i)
   }
+
+  def findChange(id: Long): Option[Change] = i.omega_session_get_change(p) match {
+    case null => None
+    case ptr  => Some(new ChangeImpl(ptr, i))
+  }
 }
 
 object Edit {

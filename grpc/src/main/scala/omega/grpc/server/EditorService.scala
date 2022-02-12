@@ -11,7 +11,7 @@ import akka.util.Timeout
 import com.google.protobuf.empty.Empty
 import io.grpc.Status
 import omega.grpc.server.EditorService._
-import omega.grpc.server.Session.{DestroyView, Save, View}
+import omega.grpc.server.Session._
 import omega.grpc.server.Sessions._
 import omega.grpc.server.Viewport.Events
 import omega_edit.ChangeKind.{CHANGE_DELETE, CHANGE_INSERT, CHANGE_OVERWRITE}
@@ -96,7 +96,19 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
       }
   }
 
-  def getChangeDetails(in: SessionChange): Future[ChangeDetailsResponse] = ???
+  def getChangeDetails(in: SessionChange): Future[ChangeDetailsResponse] = (in.sessionId, in.serial) match {
+    case (None, _) => grpcFailFut(Status.INVALID_ARGUMENT, "session id required")
+    case (_, None) => grpcFailFut(Status.INVALID_ARGUMENT, "change serial id required")
+    case (Some(sid), Some(cid)) =>
+      (sessions ? SessionOp(sid.id, LookupChange(cid))).mapTo[Result].map {
+        case ok: Ok with ChangeDetails =>
+          ChangeDetailsResponse(
+            Some(omega_edit.Change(Some(in), cid, offset = ok.change.offset(), length = ok.change.length()))
+          )
+        case Ok(_)  => ChangeDetailsResponse(Some(omega_edit.Change(Some(in))))
+        case Err(c) => throw grpcFailure(c)
+      }
+  }
 
   def unsubscribeOnChangeSession(in: ObjectId): Future[ObjectId] = Future.successful(in)
   def unsubscribeOnChangeViewport(in: ObjectId): Future[ObjectId] = Future.successful(in)
@@ -109,8 +121,9 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
   def subscribeOnChangeViewport(in: ObjectId): Source[ViewportChange, NotUsed] = in match {
     case Viewport.Id(sid, vid) =>
       val f = (sessions ? ViewportOp(sid, vid, Viewport.Watch)).mapTo[Result].map {
-        case ok: Ok with Events => ok.stream.map(u => ViewportChange(Some(ObjectId(u.id))))
-        case _                  => Source.empty
+        case ok: Ok with Events =>
+          ok.stream.map(u => ViewportChange(Some(ObjectId(u.id)), serial = u.change.map(_.id())))
+        case _ => Source.empty
       }
       Await.result(f, 1.second)
     case _ => Source.failed(new GrpcServiceException(Status.INVALID_ARGUMENT.withDescription("malformed viewport id")))

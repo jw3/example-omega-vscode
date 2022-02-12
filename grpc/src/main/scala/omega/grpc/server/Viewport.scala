@@ -7,6 +7,7 @@ import com.google.protobuf.ByteString
 import omega.grpc.server.Sessions.{Data, Ok}
 import omega.grpc.server.Viewport.{EventStream, Events, Get, Watch}
 import omega.scaladsl.api
+import omega.scaladsl.api.Change
 import omega_edit.ObjectId
 
 import java.util.UUID
@@ -29,7 +30,7 @@ object Viewport {
   trait Op
   case object Get extends Op
   case object Watch extends Op
-  case class Updated(id: String, data: String)
+  case class Updated(id: String, data: String, change: Option[Change])
 
   trait Events {
     def stream: EventStream

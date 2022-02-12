@@ -7,6 +7,7 @@ import io.grpc.Status
 import omega.grpc.server.Session._
 import omega.grpc.server.Sessions.{Err, Ok}
 import omega.scaladsl.api
+import omega.scaladsl.api.Change
 
 import java.nio.file.Path
 
@@ -31,6 +32,11 @@ object Session {
   case class Delete(offset: Long, length: Long) extends Op
   case class Insert(data: String, offset: Long) extends Op
   case class Overwrite(data: String, offset: Long) extends Op
+
+  case class LookupChange(id: Long) extends Op
+  trait ChangeDetails {
+    def change: Change
+  }
 }
 
 class Session(session: api.Session) extends Actor {
@@ -43,7 +49,7 @@ class Session(session: api.Session) extends Actor {
       val fqid = s"$sessionId-$vid"
 
       val (ws, stream) = Source.queue[Viewport.Updated](10, OverflowStrategy.fail).preMaterialize()
-      val v = session.viewCb(off, cap, (v, _) => ws.queue.offer(Viewport.Updated(fqid, v.data())))
+      val v = session.viewCb(off, cap, (v, c) => ws.queue.offer(Viewport.Updated(fqid, v.data(), c)))
       context.actorOf(Viewport.props(v, stream), vid)
 
       sender() ! Ok(fqid)
@@ -71,5 +77,14 @@ class Session(session: api.Session) extends Actor {
     case Delete(offset, length) =>
       session.delete(offset, length)
       sender() ! Ok(sessionId)
+
+    case LookupChange(id) =>
+      session.findChange(id) match {
+        case Some(c) =>
+          new Ok(s"$id") with ChangeDetails {
+            def change: Change = c
+          }
+        case None => sender() ! Err(Status.NOT_FOUND)
+      }
   }
 }

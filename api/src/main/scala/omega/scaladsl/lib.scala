@@ -27,6 +27,7 @@ private trait OmegaFFI extends Omega {
   def omega_change_get_offset(p: Pointer): Long
   def omega_change_get_length(p: Pointer): Long
   def omega_change_get_kind_as_char(p: Pointer): String
+  def omega_session_get_change(p: Pointer): Pointer
 
   def newSession(path: Option[Path]): Session = new SessionImpl(
     omega_edit_create_session(path.map(_.toString).orNull, null, null),
