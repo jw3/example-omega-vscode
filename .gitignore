@@ -7,3 +7,6 @@ out
 node_modules
 target
 .bsp
+client/client
+client/*.js*
+

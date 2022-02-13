@@ -7,17 +7,23 @@
   "repository": "https://github.com/jw3/example-omega-vscode",
   "main": "out/ext.js",
   "activationEvents": [
-    "onCommand:omega.simple"
+    "onCommand:omega.grpc",
+    "onCommand:omega.websocket"
   ],
   "engines": {
     "vscode": "^1.60.0"
   },
   "scripts": {
-    "vscode:prepublish": "tsc -p ./",
-    "package": "vsce package",
-    "compile": "tsc -watch -p ./"
+    "build": "yarn prebuild && yarn build:typescript",
+    "build:typescript": "tsc -p .",
+    "build:proto": "./compile-proto.sh",
+    "prebuild": "yarn run build:proto",
+    "package": "yarn run build && vsce package",
+    "vscode:prepublish": "yarn run build"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.2.2",
+    "google-protobuf": "^3.14.0"
   },
   "devDependencies": {
     "@types/glob": "^7.1.3",
@@ -37,19 +43,30 @@
     "vsce": "^1.87.1",
     "webpack": "^4.46.0",
     "webpack-cli": "^3.3.12",
-    "ws": "^8.5.0"
+    "ws": "^8.5.0",
+    "@types/google-protobuf": "^3.7.4",
+    "grpc-tools": "^1.10.0",
+    "grpc_tools_node_protoc_ts": "^5.2.2"
   },
   "contributes": {
     "commands": [
       {
-        "command": "omega.simple",
-        "title": "Simple Omega Edit Ω",
+        "command": "omega.grpc",
+        "title": "gRPC Omega Edit Ω",
+        "category": "Omega"
+      },
+      {
+        "command": "omega.websocket",
+        "title": "WebSocket Omega Edit Ω",
         "category": "Omega"
       }
     ],
     "commandPalette": [
       {
-        "command": "omega.simple"
+        "command": "omega.grpc"
+      },
+      {
+        "command": "omega.websocket"
       }
     ]
   }

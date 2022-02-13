@@ -33,3 +33,4 @@ Type omega at the command palette (`ctrl+shift+p`)
 ### references
 - https://github.com/scholarsmate/omega-edit
 - https://github.com/microsoft/vscode-extension-samples
+- https://github.com/badsyntax/grpc-js-typescript
