@@ -14,10 +14,8 @@
     "vscode": "^1.60.0"
   },
   "scripts": {
-    "build": "yarn prebuild && yarn build:typescript",
-    "build:typescript": "tsc -p .",
-    "build:proto": "./compile-proto.sh",
-    "prebuild": "yarn run build:proto",
+    "build": "tsc -p .",
+    "prebuild": "./compile-proto.sh",
     "package": "yarn run build && vsce package",
     "vscode:prepublish": "yarn run build"
   },
