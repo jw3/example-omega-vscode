@@ -6,6 +6,8 @@ trait Change {
   def length(): Long
 }
 
-trait ChangeResult
-case object ChangeFail extends ChangeResult
-case class Changed(id: Long) extends ChangeResult
+object Change {
+  sealed trait Result
+  case object Fail extends Result
+  case class Changed(id: Long) extends Result
+}

@@ -1,19 +1,20 @@
 package omega.scaladsl
 
 import jnr.ffi.Pointer
+import omega.scaladsl.api.Change.{Changed, Fail, Result}
 import omega.scaladsl.api._
 
 private[scaladsl] class SessionImpl(p: Pointer, i: OmegaFFI) extends Session {
-  def push(s: String): ChangeResult =
+  def push(s: String): Result =
     Edit(i.omega_edit_insert(p, 0, s, 0))
 
-  def delete(offset: Long, len: Long): ChangeResult =
+  def delete(offset: Long, len: Long): Result =
     Edit(i.omega_edit_delete(p, offset, len))
 
-  def insert(s: String, offset: Long): ChangeResult =
+  def insert(s: String, offset: Long): Result =
     Edit(i.omega_edit_insert(p, offset, s, 0))
 
-  def overwrite(s: String, offset: Long): ChangeResult =
+  def overwrite(s: String, offset: Long): Result =
     Edit(i.omega_edit_overwrite(p, offset, s, 0))
 
   def view(offset: Long, size: Long): Viewport = {
@@ -34,9 +35,9 @@ private[scaladsl] class SessionImpl(p: Pointer, i: OmegaFFI) extends Session {
 }
 
 object Edit {
-  def apply(op: => Long): ChangeResult =
+  def apply(op: => Long): Change.Result =
     op match {
-      case 0 => ChangeFail
+      case 0 => Fail
       case v => Changed(v)
     }
 }

@@ -31,7 +31,7 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
   }
 
   def createSession(in: CreateSessionRequest): Future[CreateSessionResponse] =
-    (sessions ? Create(in.sessionId, in.filePath.map(Paths.get(_)))).mapTo[Result].map {
+    (sessions ? Create(in.sessionIdDesired, in.filePath.map(Paths.get(_)))).mapTo[Result].map {
       case Ok(id) => CreateSessionResponse(Some(ObjectId(id)))
       case Err(c) => throw grpcFailure(c)
     }
@@ -55,7 +55,7 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
   def createViewport(in: CreateViewportRequest): Future[CreateViewportResponse] = in.sessionId match {
     case None => grpcFailFut(Status.INVALID_ARGUMENT, "session id required")
     case Some(oid) =>
-      (sessions ? SessionOp(oid.id, View(in.offset, in.capacity, in.viewportId.map(_.id)))).mapTo[Result].map {
+      (sessions ? SessionOp(oid.id, View(in.offset, in.capacity, in.viewportIdDesired))).mapTo[Result].map {
         case Ok(id) => CreateViewportResponse(Some(ObjectId(id)))
         case Err(c) => throw grpcFailure(c)
       }
@@ -95,7 +95,7 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
       }
   }
 
-  def getChangeDetails(in: SessionChange): Future[ChangeDetailsResponse] = (in.sessionId, in.serial) match {
+  def getChangeDetails(in: SessionEvent): Future[ChangeDetailsResponse] = (in.sessionId, in.serial) match {
     case (None, _) => grpcFailFut(Status.INVALID_ARGUMENT, "session id required")
     case (_, None) => grpcFailFut(Status.INVALID_ARGUMENT, "change serial id required")
     case (Some(sid), Some(cid)) =>
@@ -109,31 +109,41 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
       }
   }
 
-  def unsubscribeOnChangeSession(in: ObjectId): Future[ObjectId] = Future.successful(in)
-  def unsubscribeOnChangeViewport(in: ObjectId): Future[ObjectId] = Future.successful(in)
+  def unsubscribeToSessionEvents(in: ObjectId): Future[ObjectId] = Future.successful(in)
+  def unsubscribeToViewportEvents(in: ObjectId): Future[ObjectId] = Future.successful(in)
 
   /**
     * Event streams
     */
-  def subscribeOnChangeSession(in: ObjectId): Source[SessionChange, NotUsed] = {
+  def subscribeToSessionEvents(in: ObjectId): Source[SessionEvent, NotUsed] = {
     val f = (sessions ? SessionOp(in.id, Session.Watch)).mapTo[Result].map {
       case ok: Ok with Session.Events =>
-        ok.stream.map(u => SessionChange(Some(ObjectId(u.id))))
+        ok.stream.map(u => SessionEvent(Some(ObjectId(u.id))))
       case _ => Source.failed(grpcFailure(Status.UNKNOWN))
     }
     Await.result(f, 1.second)
   }
 
-  def subscribeOnChangeViewport(in: ObjectId): Source[ViewportChange, NotUsed] = in match {
+  def subscribeToViewportEvents(in: ObjectId): Source[ViewportEvent, NotUsed] = in match {
     case Viewport.Id(sid, vid) =>
       val f = (sessions ? ViewportOp(sid, vid, Viewport.Watch)).mapTo[Result].map {
         case ok: Ok with Viewport.Events =>
-          ok.stream.map(u => ViewportChange(Some(ObjectId(u.id)), serial = u.change.map(_.id())))
+          ok.stream.map(u => ViewportEvent(Some(ObjectId(u.id)), serial = u.change.map(_.id())))
         case _ => Source.failed(grpcFailure(Status.UNKNOWN))
       }
       Await.result(f, 1.second)
     case _ => Source.failed(new GrpcServiceException(Status.INVALID_ARGUMENT.withDescription("malformed viewport id")))
   }
+
+  def undoLastChange(in: ObjectId): Future[ChangeResponse] = grpcFailFut(Status.UNIMPLEMENTED)
+
+  def redoLastUndo(in: ObjectId): Future[ChangeResponse] = grpcFailFut(Status.UNIMPLEMENTED)
+
+  def clearChanges(in: ObjectId): Future[ObjectId] = grpcFailFut(Status.UNIMPLEMENTED)
+
+  def pauseViewportEvents(in: ObjectId): Future[ObjectId] = grpcFailFut(Status.UNIMPLEMENTED)
+
+  def resumeViewportEvents(in: ObjectId): Future[ObjectId] = grpcFailFut(Status.UNIMPLEMENTED)
 }
 
 object EditorService {

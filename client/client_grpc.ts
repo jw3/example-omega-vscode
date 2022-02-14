@@ -47,9 +47,7 @@ function newSession(c: EditorClient, path: string | undefined): Promise<ObjectId
 function newViewport(id: string, c: EditorClient, sid: ObjectId, offset: number, capacity: number): Promise<ObjectId> {
     return new Promise<ObjectId>((resolve, reject) => {
         let request = new CreateViewportRequest();
-        let vid = new ObjectId()
-        vid.setId(id)
-        request.setViewportId(vid)
+        request.setViewportIdDesired(id)
         request.setSessionId(sid);
         request.setOffset(offset);
         request.setCapacity(capacity);
@@ -103,7 +101,7 @@ export function activate(ctx: vscode.ExtensionContext) {
                 }
             });
 
-            c.subscribeOnChangeViewport(vp1).on('data', () => {
+            c.subscribeToViewportEvents(vp1).on('data', () => {
                 let vpdr1 = new ViewportDataRequest()
                 vpdr1.setViewportId(vp1)
                 c.getViewportData(vpdr1, (err, r) => {
@@ -117,7 +115,7 @@ export function activate(ctx: vscode.ExtensionContext) {
                     }
                 });
             })
-            c.subscribeOnChangeViewport(vp1).on('data', () => {
+            c.subscribeToViewportEvents(vp1).on('data', () => {
                 let vpdr2 = new ViewportDataRequest()
                 vpdr2.setViewportId(vp2)
                 c.getViewportData(vpdr2, (err, r) => {
@@ -128,7 +126,7 @@ export function activate(ctx: vscode.ExtensionContext) {
                     }
                 });
             })
-            c.subscribeOnChangeViewport(vp1).on('data', () => {
+            c.subscribeToViewportEvents(vp1).on('data', () => {
                 let vpdr3 = new ViewportDataRequest()
                 vpdr3.setViewportId(vp3)
                 c.getViewportData(vpdr3, (err, r) => {

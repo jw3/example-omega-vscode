@@ -26,16 +26,21 @@ service Editor {
   rpc SaveSession(SaveSessionRequest) returns (SaveSessionResponse);
   rpc DestroySession(ObjectId) returns (ObjectId);
   rpc SubmitChange(ChangeRequest) returns (ChangeResponse);
+  rpc UndoLastChange(ObjectId) returns (ChangeResponse);
+  rpc RedoLastUndo(ObjectId) returns (ChangeResponse);
+  rpc ClearChanges(ObjectId) returns (ObjectId);
+  rpc PauseViewportEvents(ObjectId) returns (ObjectId);
+  rpc ResumeViewportEvents(ObjectId) returns (ObjectId);
   rpc CreateViewport(CreateViewportRequest) returns (CreateViewportResponse);
   rpc GetViewportData(ViewportDataRequest) returns (ViewportDataResponse);
   rpc DestroyViewport(ObjectId) returns (ObjectId);
-  rpc GetChangeDetails(SessionChange) returns (ChangeDetailsResponse);
-  rpc UnsubscribeOnChangeSession(ObjectId) returns (ObjectId);
-  rpc UnsubscribeOnChangeViewport(ObjectId) returns (ObjectId);
+  rpc GetChangeDetails(SessionEvent) returns (ChangeDetailsResponse);
+  rpc UnsubscribeToSessionEvents(ObjectId) returns (ObjectId);
+  rpc UnsubscribeToViewportEvents(ObjectId) returns (ObjectId);
 
   // Event streams
-  rpc SubscribeOnChangeSession(ObjectId) returns (stream SessionChange);
-  rpc SubscribeOnChangeViewport(ObjectId) returns (stream ViewportChange);
+  rpc SubscribeToSessionEvents(ObjectId) returns (stream SessionEvent);
+  rpc SubscribeToViewportEvents(ObjectId) returns (stream ViewportEvent);
 }
 
 message VersionResponse {
@@ -72,7 +77,7 @@ message CreateViewportRequest {
   ObjectId session_id = 1;
   int64 capacity = 2;
   int64 offset = 3;
-  optional ObjectId viewport_id = 4;
+  optional string viewport_id_desired = 4;
 }
 
 message CreateViewportResponse {
@@ -90,8 +95,8 @@ message ViewportDataResponse {
 }
 
 message CreateSessionRequest {
-  optional string session_id = 1;
-  optional string file_path = 2;
+  optional string file_path = 1;
+  optional string session_id_desired = 2;
 }
 
 message CreateSessionResponse {
@@ -108,7 +113,7 @@ message SaveSessionResponse {
   string file_path = 2;
 }
 
-enum SessionChangeKind {
+enum SessionEventKind {
   SESSION_EVT_UNDEFINED = 0;
   SESSION_EVT_CREATE = 1;
   SESSION_EVT_EDIT = 2;
@@ -120,13 +125,13 @@ enum SessionChangeKind {
   SESSION_EVT_SAVE = 128;
 }
 
-message SessionChange {
+message SessionEvent {
   ObjectId session_id = 1;
-  SessionChangeKind session_change_kind = 2;
+  SessionEventKind session_event_kind = 2;
   optional int64 serial = 3;
 }
 
-enum ViewportChangeKind {
+enum ViewportEventKind {
   VIEWPORT_EVT_UNDEFINED = 0;
   VIEWPORT_EVT_CREATE = 1;
   VIEWPORT_EVT_EDIT = 2;
@@ -135,10 +140,12 @@ enum ViewportChangeKind {
   VIEWPORT_EVT_TRANSFORM = 16;
 }
 
-message ViewportChange {
+message ViewportEvent {
   ObjectId viewport_id = 1;
-  ViewportChangeKind viewport_change_kind = 2;
+  ViewportEventKind viewport_event_kind = 2;
   optional int64 serial = 3;
+  optional int64 length = 4;
+  optional bytes data = 5;
 }
 
 message ChangeDetailsResponse {
@@ -146,7 +153,7 @@ message ChangeDetailsResponse {
 }
 
 message Change {
-  SessionChange id = 1;
+  SessionEvent id = 1;
   int64 serial = 2;
   ChangeKind kind = 3;
   int64 offset = 4;

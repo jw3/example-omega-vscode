@@ -36,12 +36,12 @@ object Demonstration {
     for {
       s <- editor.createSession(CreateSessionRequest(Some("build.sbt")))
       _ = println(s.getSessionId.id)
-      _ = editor.subscribeOnChangeSession(s.getSessionId).runForeach(_ => println(".:Session change event:."))
+      _ = editor.subscribeToSessionEvents(s.getSessionId).runForeach(_ => println(".:Session change event:."))
       v <- editor.createViewport(CreateViewportRequest(s.sessionId, 1000))
       _ = println(v.getViewportId.id)
       d <- editor.getViewportData(ViewportDataRequest(v.viewportId))
       _ = println(s"[source data] ${d.data.toStringUtf8.take(20)}...")
-      _ = editor.subscribeOnChangeViewport(v.getViewportId).runForeach(_ => println(".:Viewport change event:."))
+      _ = editor.subscribeToViewportEvents(v.getViewportId).runForeach(_ => println(".:Viewport change event:."))
       _ <- editor.submitChange(
         ChangeRequest(s.sessionId, ChangeKind.CHANGE_OVERWRITE, 0, 0, Some(ByteString.copyFromUtf8("********")))
       )
