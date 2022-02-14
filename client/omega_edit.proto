@@ -72,6 +72,7 @@ message CreateViewportRequest {
   ObjectId session_id = 1;
   int64 capacity = 2;
   int64 offset = 3;
+  optional ObjectId viewport_id = 4;
 }
 
 message CreateViewportResponse {

@@ -36,9 +36,12 @@ function newSession(c: EditorClient, path: string | undefined): Promise<ObjectId
     })
 }
 
-function newViewport(c: EditorClient, sid: ObjectId, offset: number, capacity: number): Promise<ObjectId> {
+function newViewport(id: string, c: EditorClient, sid: ObjectId, offset: number, capacity: number): Promise<ObjectId> {
     return new Promise<ObjectId>((resolve, reject) => {
         let request = new CreateViewportRequest();
+        let vid = new ObjectId()
+        vid.setId(id)
+        request.setViewportId(vid)
         request.setSessionId(sid);
         request.setOffset(offset);
         request.setCapacity(capacity);
