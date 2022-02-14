@@ -55,7 +55,7 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
   def createViewport(in: CreateViewportRequest): Future[CreateViewportResponse] = in.sessionId match {
     case None => grpcFailFut(Status.INVALID_ARGUMENT, "session id required")
     case Some(oid) =>
-      (sessions ? SessionOp(oid.id, View(in.offset, in.capacity))).mapTo[Result].map {
+      (sessions ? SessionOp(oid.id, View(in.offset, in.capacity, in.viewportId.map(_.id)))).mapTo[Result].map {
         case Ok(id) => CreateViewportResponse(Some(ObjectId(id)))
         case Err(c) => throw grpcFailure(c)
       }

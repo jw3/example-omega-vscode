@@ -23,7 +23,7 @@ object Session {
 
   trait Op
   case class Save(to: Path) extends Op
-  case class View(offset: Long, capacity: Long) extends Op
+  case class View(offset: Long, capacity: Long, id: Option[String]) extends Op
   case class DestroyView(id: String) extends Op
   case object Watch extends Op
 
@@ -44,16 +44,19 @@ class Session(session: api.Session, events: EventStream) extends Actor {
   val sessionId: String = self.path.name
 
   def receive: Receive = {
-    case View(off, cap) =>
+    case View(off, cap, id) =>
       import context.system
-      val vid = Viewport.Id.uuid()
+      val vid = id.getOrElse(Viewport.Id.uuid())
       val fqid = s"$sessionId-$vid"
 
-      val (input, stream) = Source.queue[Viewport.Updated](10, OverflowStrategy.fail).preMaterialize()
-      val v = session.viewCb(off, cap, (v, c) => input.queue.offer(Viewport.Updated(fqid, v.data(), c)))
-      context.actorOf(Viewport.props(v, stream), vid)
-
-      sender() ! Ok(fqid)
+      context.child(fqid) match {
+        case Some(_) => sender() ! Err(Status.ALREADY_EXISTS)
+        case None =>
+          val (input, stream) = Source.queue[Viewport.Updated](10, OverflowStrategy.fail).preMaterialize()
+          val v = session.viewCb(off, cap, (v, c) => input.queue.offer(Viewport.Updated(fqid, v.data(), c)))
+          context.actorOf(Viewport.props(v, stream), vid)
+          sender() ! Ok(fqid)
+      }
 
     case DestroyView(vid) =>
       context.child(vid) match {
