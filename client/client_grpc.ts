@@ -176,20 +176,21 @@ function getWebviewContent(uri: string) {
     <style>
         .grid-container {
           display: grid;
-          grid-gap: 5px 5px;
+          grid-gap: 2px 2px;
           grid-template-columns: auto auto auto;
           background-color: #2196F3;
-          padding: 10px;
+          padding: 5px;
         }
 
         .grid-item {
           background-color: rgba(255, 255, 255, 0.8);
           border: 1px solid rgba(0, 0, 0, 0.8);
-          padding: 5px;
-          font-size: 15px;
+          padding: 2px;
+          font-size: 12px;
           text-align: left;
           color: black;
           white-space: pre;
+          font-family: monospace;
         }
     </style>
 </head>
