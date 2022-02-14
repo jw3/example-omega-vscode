@@ -18,7 +18,7 @@ object Sessions {
   def props() = Props(new Sessions)
 
   case class Find(id: String)
-  case class Create(path: Option[Path])
+  case class Create(id: Option[String], path: Option[Path])
   case class Destroy(id: String)
 
   ///
@@ -53,8 +53,8 @@ class Sessions extends Actor with ActorLogging {
   implicit val timeout = Timeout(1.second)
 
   def receive: Receive = {
-    case Create(path) =>
-      val id = idFor(path)
+    case Create(sid, path) =>
+      val id = sid.getOrElse(idFor(path))
       context.child(id) match {
         case Some(_) =>
           sender() ! Err(Status.ALREADY_EXISTS)

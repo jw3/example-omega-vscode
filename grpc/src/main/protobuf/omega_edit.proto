@@ -90,7 +90,8 @@ message ViewportDataResponse {
 }
 
 message CreateSessionRequest {
-  optional string file_path = 1;
+  optional string session_id = 1;
+  optional string file_path = 2;
 }
 
 message CreateSessionResponse {

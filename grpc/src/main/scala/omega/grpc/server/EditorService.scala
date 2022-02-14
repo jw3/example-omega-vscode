@@ -31,7 +31,7 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
   }
 
   def createSession(in: CreateSessionRequest): Future[CreateSessionResponse] =
-    (sessions ? Create(in.filePath.map(Paths.get(_)))).mapTo[Result].map {
+    (sessions ? Create(in.sessionId, in.filePath.map(Paths.get(_)))).mapTo[Result].map {
       case Ok(id) => CreateSessionResponse(Some(ObjectId(id)))
       case Err(c) => throw grpcFailure(c)
     }
