@@ -101,10 +101,8 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
     case (Some(sid), Some(cid)) =>
       (sessions ? SessionOp(sid.id, LookupChange(cid))).mapTo[Result].map {
         case ok: Ok with ChangeDetails =>
-          ChangeDetailsResponse(
-            Some(omega_edit.Change(Some(in), cid, offset = ok.change.offset(), length = ok.change.length()))
-          )
-        case Ok(_)  => ChangeDetailsResponse(Some(omega_edit.Change(Some(in))))
+          ChangeDetailsResponse(Some(in), cid, offset = ok.change.offset(), length = ok.change.length())
+        case Ok(_)  => ChangeDetailsResponse(Some(in))
         case Err(c) => throw grpcFailure(c)
       }
   }
