@@ -1,4 +1,4 @@
-package example
+package omega.examples
 
 import akka.actor.ActorSystem
 import akka.grpc.GrpcClientSettings
