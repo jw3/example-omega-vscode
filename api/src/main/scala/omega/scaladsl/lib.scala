@@ -1,15 +1,12 @@
 package omega.scaladsl
 
 import jnr.ffi.{LibraryLoader, Pointer}
-import omega.scaladsl.api.{Omega, Session, SessionCallback, Version, ViewportCallback}
+import omega.scaladsl.api._
 
 import java.nio.file.Path
 
 object lib {
   val omega: Omega = LibraryLoader.create(classOf[OmegaFFI]).failImmediately().load("omega_edit")
-
-  // HACK;; prevent callbacks from being garbage collected
-  private[scaladsl] var callbacks = List.empty[AnyRef]
 }
 
 private trait OmegaFFI extends Omega {
@@ -44,13 +41,10 @@ private trait OmegaFFI extends Omega {
     this
   )
 
-  def newSessionCb(path: Option[Path], cb: SessionCallback): Session = {
-    lib.callbacks +:= cb
-    new SessionImpl(
-      omega_edit_create_session(path.map(_.toString).orNull, cb, null),
-      this
-    )
-  }
+  def newSessionCb(path: Option[Path], cb: SessionCallback): Session = new SessionImpl(
+    omega_edit_create_session(path.map(_.toString).orNull, cb, null),
+    this
+  )
 
   def version(): Version = Version(omega_version_major(), omega_version_minor(), omega_version_patch())
 }

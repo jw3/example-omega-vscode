@@ -61,8 +61,8 @@ class Sessions extends Actor with ActorLogging {
         case None =>
           import context.system
           val (input, stream) = Source.queue[Session.Updated](10, OverflowStrategy.fail).preMaterialize()
-          val s = sessionFor(path, _ => input.queue.offer(Session.Updated(id)))
-          context.actorOf(Session.props(s, stream), id)
+          val cb = SessionCallback(_ => input.queue.offer(Session.Updated(id)))
+          context.actorOf(Session.props(sessionFor(path, cb), stream, cb), id)
           sender() ! Ok(id)
       }
 

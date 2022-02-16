@@ -8,7 +8,7 @@ import io.grpc.Status
 import omega.grpc.server.Session._
 import omega.grpc.server.Sessions.{Err, Ok}
 import omega.scaladsl.api
-import omega.scaladsl.api.Change
+import omega.scaladsl.api.{Change, SessionCallback, ViewportCallback}
 
 import java.nio.file.Path
 
@@ -18,8 +18,8 @@ object Session {
     def stream: EventStream
   }
 
-  def props(session: api.Session, events: EventStream): Props =
-    Props(new Session(session, events))
+  def props(session: api.Session, events: EventStream, cb: SessionCallback): Props =
+    Props(new Session(session, events, cb))
 
   trait Op
   case class Save(to: Path) extends Op
@@ -40,7 +40,7 @@ object Session {
   }
 }
 
-class Session(session: api.Session, events: EventStream) extends Actor {
+class Session(session: api.Session, events: EventStream, cb: SessionCallback) extends Actor {
   val sessionId: String = self.path.name
 
   def receive: Receive = {
@@ -53,8 +53,8 @@ class Session(session: api.Session, events: EventStream) extends Actor {
         case Some(_) => sender() ! Err(Status.ALREADY_EXISTS)
         case None =>
           val (input, stream) = Source.queue[Viewport.Updated](10, OverflowStrategy.fail).preMaterialize()
-          val v = session.viewCb(off, cap, (v, c) => input.queue.offer(Viewport.Updated(fqid, v.data(), c)))
-          context.actorOf(Viewport.props(v, stream), vid)
+          val cb = ViewportCallback((v, c) => input.queue.offer(Viewport.Updated(fqid, v.data(), c)))
+          context.actorOf(Viewport.props(session.viewCb(off, cap, cb), stream, cb), vid)
           sender() ! Ok(fqid)
       }
 

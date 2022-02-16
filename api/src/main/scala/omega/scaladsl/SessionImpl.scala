@@ -38,7 +38,6 @@ private[scaladsl] class SessionImpl(p: Pointer, i: OmegaFFI) extends Session {
   }
 
   def viewCb(offset: Long, size: Long, cb: ViewportCallback): Viewport = {
-    lib.callbacks +:= cb
     val vp = i.omega_edit_create_viewport(p, offset, size, cb, null)
     new ViewportImpl(vp, i)
   }

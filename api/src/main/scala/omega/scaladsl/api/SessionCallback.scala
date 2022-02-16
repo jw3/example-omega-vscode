@@ -10,3 +10,8 @@ trait SessionCallback {
 
   def handle(v: Session): Unit
 }
+
+object SessionCallback {
+  def apply(cb: (Session) => Unit): SessionCallback =
+    (v: Session) => cb(v)
+}

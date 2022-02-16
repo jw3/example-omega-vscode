@@ -16,3 +16,8 @@ trait ViewportCallback {
 
   def handle(v: Viewport, change: Option[Change]): Unit
 }
+
+object ViewportCallback {
+  def apply(cb: (Viewport, Option[Change]) => Unit): ViewportCallback =
+    (v: Viewport, change: Option[Change]) => cb(v, change)
+}

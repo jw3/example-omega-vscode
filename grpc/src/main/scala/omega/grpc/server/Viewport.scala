@@ -7,7 +7,7 @@ import com.google.protobuf.ByteString
 import omega.grpc.server.Sessions.{Data, Ok}
 import omega.grpc.server.Viewport.{EventStream, Events, Get, Watch}
 import omega.scaladsl.api
-import omega.scaladsl.api.Change
+import omega.scaladsl.api.{Change, ViewportCallback}
 import omega_edit.ObjectId
 
 import java.util.UUID
@@ -18,7 +18,8 @@ object Viewport {
     def stream: EventStream
   }
 
-  def props(view: api.Viewport, stream: EventStream) = Props(new Viewport(view, stream))
+  def props(view: api.Viewport, stream: EventStream, cb: ViewportCallback) =
+    Props(new Viewport(view, stream, cb))
 
   case class Id(session: String, view: String)
   object Id {
@@ -37,7 +38,7 @@ object Viewport {
   case class Updated(id: String, data: String, change: Option[Change])
 }
 
-class Viewport(view: api.Viewport, events: EventStream) extends Actor with ActorLogging {
+class Viewport(view: api.Viewport, events: EventStream, cb: ViewportCallback) extends Actor with ActorLogging {
   val viewportId: String = self.path.name
 
   def receive: Receive = {
