@@ -29,7 +29,10 @@ lazy val api = project
   .settings(commonSettings)
   .settings(
     name := "omega-api",
-    libraryDependencies ++= Seq("com.github.jnr" % "jnr-ffi" % "2.2.10")
+    libraryDependencies ++= Seq(
+      "com.github.jnr" % "jnr-ffi" % "2.2.11",
+      "org.scalatest" %% "scalatest" % "3.2.11" % "test"
+    )
   )
   .enablePlugins(commonPlugins: _*)
 
