@@ -28,8 +28,8 @@ class Session(session: api.Session) extends Actor {
       })
       println(s"registered view: $view")
 
-    case Push(data)              => session.push(data)
-    case Overwrite(data, offset) => session.overwrite(data, offset)
+    case Push(data)              => session.push(data.getBytes)
+    case Overwrite(data, offset) => session.overwrite(data.getBytes, offset)
     case Delete(offset, length)  => session.delete(offset, length)
   }
 }
