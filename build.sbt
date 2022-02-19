@@ -22,52 +22,45 @@ lazy val commonPlugins = Seq(JavaAppPackaging, UniversalPlugin)
 lazy val `example-omega-ext` = project
   .in(file("."))
   .settings(commonSettings)
-  .aggregate(api, websocket, grpc, examples)
-
-lazy val api = project
-  .in(file("api"))
-  .settings(commonSettings)
-  .settings(
-    name := "omega-api",
-    libraryDependencies ++= Seq(
-      "com.github.jnr" % "jnr-ffi" % "2.2.11",
-      "org.scalatest" %% "scalatest" % "3.2.11" % "test"
-    )
-  )
-  .enablePlugins(commonPlugins: _*)
+  .aggregate(grpc, examples)
 
 lazy val examples = project
   .in(file("examples"))
-  .dependsOn(api, websocket, grpc)
+  .dependsOn(grpc)
   .settings(commonSettings)
   .settings(
     name := "omega-examples"
   )
   .enablePlugins(commonPlugins: _*)
 
-lazy val websocket = project
-  .in(file("websocket"))
-  .dependsOn(api)
-  .settings(commonSettings)
-  .settings(
-    name := "websocket-backend",
-    libraryDependencies ++= Seq(
-      "com.typesafe.akka" %% "akka-actor" % "2.5.32",
-      "com.typesafe.akka" %% "akka-http" % "10.2.7",
-      "com.typesafe.akka" %% "akka-stream" % "2.5.32",
-      "com.typesafe.akka" %% "akka-http-spray-json" % "10.2.7",
-      "io.github.paoloboni" %% "spray-json-derived-codecs" % "2.3.5"
-    )
-  )
-  .enablePlugins(commonPlugins: _*)
-
 lazy val grpc = project
   .in(file("grpc"))
-  .dependsOn(api)
   .settings(commonSettings)
   .settings(
     name := "grpc-backend",
-    libraryDependencies ++= Seq()
+    libraryDependencies ++= Seq(
+      "com.ctc" %% "omega-edit" % "0.7.0-52-gfaf9757",
+      "com.ctc" %% "omega-edit-native" % "0.7.0-52-gfaf9757" classifier s"$arch"
+    )
   )
   .enablePlugins(commonPlugins: _*)
   .enablePlugins(AkkaGrpcPlugin)
+
+lazy val arch: String = {
+  val Mac = """mac.+""".r
+  val Amd = """amd(\d+)""".r
+  val x86 = """x86_(\d+)""".r
+
+  val os = System.getProperty("os.name").toLowerCase match {
+    case "linux"   => "linux"
+    case Mac()     => "osx"
+    case "windows" => "windows"
+  }
+
+  val arch = System.getProperty("os.arch").toLowerCase match {
+    case Amd(bits) => bits
+    case x86(bits) => bits
+    case arch      => throw new IllegalStateException(s"unknown arch: $arch")
+  }
+  s"$os-$arch"
+}

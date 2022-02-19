@@ -7,8 +7,8 @@ import akka.stream.scaladsl.Source
 import io.grpc.Status
 import omega.grpc.server.Session._
 import omega.grpc.server.Sessions.{Err, Ok}
-import omega.scaladsl.api
-import omega.scaladsl.api.{Change, SessionCallback, ViewportCallback}
+import com.ctc.omega_edit.api
+import com.ctc.omega_edit.api.{Change, SessionCallback, ViewportCallback}
 
 import java.nio.file.Path
 
@@ -53,7 +53,7 @@ class Session(session: api.Session, events: EventStream, cb: SessionCallback) ex
         case Some(_) => sender() ! Err(Status.ALREADY_EXISTS)
         case None =>
           val (input, stream) = Source.queue[Viewport.Updated](10, OverflowStrategy.fail).preMaterialize()
-          val cb = ViewportCallback((v, c) => input.queue.offer(Viewport.Updated(fqid, v.data(), c)))
+          val cb = ViewportCallback((v, e, c) => input.queue.offer(Viewport.Updated(fqid, v.data(), c)))
           context.actorOf(Viewport.props(session.viewCb(off, cap, cb), stream, cb), vid)
           sender() ! Ok(fqid)
       }

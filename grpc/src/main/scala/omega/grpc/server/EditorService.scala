@@ -8,6 +8,7 @@ import akka.pattern.ask
 import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.Timeout
+import com.ctc.omega_edit.api.OmegaEdit
 import com.google.protobuf.empty.Empty
 import io.grpc.Status
 import omega.grpc.server.EditorService._
@@ -26,7 +27,7 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
   import system.dispatcher
 
   def getOmegaVersion(in: Empty): Future[VersionResponse] = {
-    val v = OmegaLib.version()
+    val v = OmegaEdit.version()
     Future.successful(VersionResponse(v.major, v.minor, v.patch))
   }
 
@@ -101,7 +102,7 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
     case (Some(sid), Some(cid)) =>
       (sessions ? SessionOp(sid.id, LookupChange(cid))).mapTo[Result].map {
         case ok: Ok with ChangeDetails =>
-          ChangeDetailsResponse(Some(in), cid, offset = ok.change.offset(), length = ok.change.length())
+          ChangeDetailsResponse(Some(in), cid, offset = ok.change.offset, length = ok.change.length)
         case Ok(_)  => ChangeDetailsResponse(Some(in))
         case Err(c) => throw grpcFailure(c)
       }
@@ -126,7 +127,7 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
     case Viewport.Id(sid, vid) =>
       val f = (sessions ? ViewportOp(sid, vid, Viewport.Watch)).mapTo[Result].map {
         case ok: Ok with Viewport.Events =>
-          ok.stream.map(u => ViewportEvent(Some(ObjectId(u.id)), serial = u.change.map(_.id())))
+          ok.stream.map(u => ViewportEvent(Some(ObjectId(u.id)), serial = u.change.map(_.id)))
         case _ => Source.failed(grpcFailure(Status.UNKNOWN))
       }
       Await.result(f, 1.second)

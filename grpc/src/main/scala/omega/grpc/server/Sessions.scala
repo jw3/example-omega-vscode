@@ -6,8 +6,8 @@ import akka.stream.scaladsl.Source
 import akka.util.Timeout
 import com.google.protobuf.ByteString
 import io.grpc.Status
-import omega.scaladsl.api
-import omega.scaladsl.api.SessionCallback
+import com.ctc.omega_edit.api
+import com.ctc.omega_edit.api.{OmegaEdit, SessionCallback}
 
 import java.nio.file.Path
 import java.util.{Base64, UUID}
@@ -41,10 +41,10 @@ object Sessions {
 
   private def sessionFor(path: Option[Path], cb: SessionCallback): api.Session = path match {
     case None =>
-      val session = OmegaLib.newSessionCb(None, cb)
+      val session = OmegaEdit.newSessionCb(None, cb)
       session.push(List.fill(10000)(" ").mkString)
       session
-    case path => OmegaLib.newSessionCb(path, cb)
+    case path => OmegaEdit.newSessionCb(path, cb)
   }
 }
 

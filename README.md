@@ -1,7 +1,7 @@
 example omega edit extension
 ===
 
-Example VS Code plugin that uses Scala [Omega Edit](https://github.com/scholarsmate/omega-edit) bindings to demonstrate interaction over both gRPC and WebSockets.
+Example VS Code plugin that uses Scala [Omega Edit](https://github.com/scholarsmate/omega-edit) bindings to demonstrate interaction over both gRPC.
 
 ## areas for improvement
 - the proto file is currently duplicated between the server and client projects
@@ -14,29 +14,23 @@ Example VS Code plugin that uses Scala [Omega Edit](https://github.com/scholarsm
 
 ## build and launch
 
-Install the Omega Edit shared library in ld searched path or set `LD_LIBRARY_PATH`.
+Publish the Omega Edit Scala API locally with `sbt +publishLocal` from the Omega Edit Scala bindings project.
 
-Omega Edit shared library >= `53f4c4240b85a6e5c7cf2ff8c65c92082421a2d7` suggested.
+Omega Edit shared library > `0.7.0` required.
 
 ### backend 
 
 `sbt compile grpc/run`
-or
-`sbt compile websocket/run`
 
 ### frontend
 
-The frontend is wired for both the WebSocket and gRPC backends, using commands `omega.websocket` and `omega.grpc` respectively.
-
-To launch the 
+Launch with 
 
 ```
 yarn
 yarn package
 code --extensionDevelopmentPath=<this-project-dir>
 ```
-
-### show extension
 
 Type omega at the command palette (`ctrl+shift+p`)
 

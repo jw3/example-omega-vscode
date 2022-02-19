@@ -6,8 +6,8 @@ import akka.stream.scaladsl.Source
 import com.google.protobuf.ByteString
 import omega.grpc.server.Sessions.{Data, Ok}
 import omega.grpc.server.Viewport.{EventStream, Events, Get, Watch}
-import omega.scaladsl.api
-import omega.scaladsl.api.{Change, ViewportCallback}
+import com.ctc.omega_edit.api
+import com.ctc.omega_edit.api.{Change, ViewportCallback}
 import omega_edit.ObjectId
 
 import java.util.UUID
