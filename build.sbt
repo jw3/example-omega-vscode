@@ -33,15 +33,17 @@ lazy val examples = project
   )
   .enablePlugins(commonPlugins: _*)
 
+val omegaEditVersion = "0.7.0-22-g96a9db5"
 lazy val grpc = project
   .in(file("grpc"))
   .settings(commonSettings)
   .settings(
     name := "grpc-backend",
     libraryDependencies ++= Seq(
-      "com.ctc" %% "omega-edit" % "0.7.0-52-gfaf9757",
-      "com.ctc" %% "omega-edit-native" % "0.7.0-52-gfaf9757" classifier s"$arch"
-    )
+      "com.ctc" %% "omega-edit" % omegaEditVersion,
+      "com.ctc" %% "omega-edit-native" % omegaEditVersion classifier s"$arch"
+    ),
+    resolvers += Resolver.mavenLocal
   )
   .enablePlugins(commonPlugins: _*)
   .enablePlugins(AkkaGrpcPlugin)

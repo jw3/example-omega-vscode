@@ -44,7 +44,7 @@ class Viewport(view: api.Viewport, events: EventStream, cb: ViewportCallback) ex
   def receive: Receive = {
     case Get =>
       sender() ! new Ok(viewportId) with Data {
-        def data: ByteString = ByteString.copyFromUtf8(view.data())
+        def data: ByteString = ByteString.copyFromUtf8(view.data)
       }
 
     case Watch =>

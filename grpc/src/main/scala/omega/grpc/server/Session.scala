@@ -53,7 +53,7 @@ class Session(session: api.Session, events: EventStream, cb: SessionCallback) ex
         case Some(_) => sender() ! Err(Status.ALREADY_EXISTS)
         case None =>
           val (input, stream) = Source.queue[Viewport.Updated](10, OverflowStrategy.fail).preMaterialize()
-          val cb = ViewportCallback((v, e, c) => input.queue.offer(Viewport.Updated(fqid, v.data(), c)))
+          val cb = ViewportCallback((v, e, c) => input.queue.offer(Viewport.Updated(fqid, v.data, c)))
           context.actorOf(Viewport.props(session.viewCb(off, cap, cb), stream, cb), vid)
           sender() ! Ok(fqid)
       }
