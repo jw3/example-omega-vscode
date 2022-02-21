@@ -33,7 +33,7 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
 
   def createSession(in: CreateSessionRequest): Future[CreateSessionResponse] =
     (sessions ? Create(in.sessionIdDesired, in.filePath.map(Paths.get(_)))).mapTo[Result].map {
-      case Ok(id) => CreateSessionResponse(Some(ObjectId(id)))
+      case Ok(id) => CreateSessionResponse(id)
       case Err(c) => throw grpcFailure(c)
     }
 
@@ -44,23 +44,16 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
     }
 
   def saveSession(in: SaveSessionRequest): Future[SaveSessionResponse] =
-    in.sessionId.map(_.id) match {
-      case None => grpcFailFut(Status.INVALID_ARGUMENT, "path required")
-      case Some(id) =>
-        (sessions ? SessionOp(id, Save(Paths.get(in.filePath)))).mapTo[Result].map {
-          case Ok(id) => SaveSessionResponse(Some(ObjectId(id)))
-          case Err(c) => throw grpcFailure(c)
-        }
+    (sessions ? SessionOp(in.sessionId, Save(Paths.get(in.filePath)))).mapTo[Result].map {
+      case Ok(id) => SaveSessionResponse(id)
+      case Err(c) => throw grpcFailure(c)
     }
 
-  def createViewport(in: CreateViewportRequest): Future[CreateViewportResponse] = in.sessionId match {
-    case None => grpcFailFut(Status.INVALID_ARGUMENT, "session id required")
-    case Some(oid) =>
-      (sessions ? SessionOp(oid.id, View(in.offset, in.capacity, in.viewportIdDesired))).mapTo[Result].map {
-        case Ok(id) => CreateViewportResponse(Some(ObjectId(id)))
-        case Err(c) => throw grpcFailure(c)
-      }
-  }
+  def createViewport(in: CreateViewportRequest): Future[CreateViewportResponse] =
+    (sessions ? SessionOp(in.sessionId, View(in.offset, in.capacity, in.viewportIdDesired))).mapTo[Result].map {
+      case Ok(id) => CreateViewportResponse(id)
+      case Err(c) => throw grpcFailure(c)
+    }
 
   def destroyViewport(in: ObjectId): Future[ObjectId] =
     in match {
@@ -72,38 +65,33 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
       case _ => grpcFailFut(Status.INVALID_ARGUMENT, "malformed viewport id")
     }
 
-  def getViewportData(in: ViewportDataRequest): Future[ViewportDataResponse] = in.viewportId match {
-    case Some(Viewport.Id(sid, vid)) =>
+  def getViewportData(in: ViewportDataRequest): Future[ViewportDataResponse] = ObjectId(in.viewportId) match {
+    case Viewport.Id(sid, vid) =>
       (sessions ? ViewportOp(sid, vid, Viewport.Get)).mapTo[Result].map {
         case Err(c)           => throw grpcFailure(c)
-        case ok: Ok with Data => ViewportDataResponse(Some(ObjectId(ok.id)), ok.data.size(), ok.data)
-        case Ok(id)           => ViewportDataResponse(Some(ObjectId(id)))
+        case ok: Ok with Data => ViewportDataResponse(ok.id, ok.data.size(), ok.data)
+        case Ok(id)           => ViewportDataResponse(id)
       }
-    case None    => grpcFailFut(Status.INVALID_ARGUMENT, "viewport id required")
-    case Some(_) => grpcFailFut(Status.INVALID_ARGUMENT, "malformed viewport id")
+    case _ => grpcFailFut(Status.INVALID_ARGUMENT, "malformed viewport id")
   }
 
-  def submitChange(in: ChangeRequest): Future[ChangeResponse] = in.sessionId match {
-    case None => grpcFailFut(Status.INVALID_ARGUMENT, "session id required")
-    case Some(oid) =>
-      opForRequest(in) match {
-        case None => grpcFailFut(Status.INVALID_ARGUMENT, "undefined change kind")
-        case Some(op) =>
-          (sessions ? SessionOp(oid.id, op)).mapTo[Result].map {
-            case Ok(id) => ChangeResponse(Some(ObjectId(id)))
-            case Err(c) => throw grpcFailure(c)
-          }
-      }
-  }
+  def submitChange(in: ChangeRequest): Future[ChangeResponse] =
+    opForRequest(in) match {
+      case None => grpcFailFut(Status.INVALID_ARGUMENT, "undefined change kind")
+      case Some(op) =>
+        (sessions ? SessionOp(in.sessionId, op)).mapTo[Result].map {
+          case Ok(id) => ChangeResponse(id)
+          case Err(c) => throw grpcFailure(c)
+        }
+    }
 
-  def getChangeDetails(in: SessionEvent): Future[ChangeDetailsResponse] = (in.sessionId, in.serial) match {
-    case (None, _) => grpcFailFut(Status.INVALID_ARGUMENT, "session id required")
-    case (_, None) => grpcFailFut(Status.INVALID_ARGUMENT, "change serial id required")
-    case (Some(sid), Some(cid)) =>
-      (sessions ? SessionOp(sid.id, LookupChange(cid))).mapTo[Result].map {
+  def getChangeDetails(in: SessionEvent): Future[ChangeDetailsResponse] = in.serial match {
+    case None => grpcFailFut(Status.INVALID_ARGUMENT, "change serial id required")
+    case Some(cid) =>
+      (sessions ? SessionOp(in.sessionId, LookupChange(cid))).mapTo[Result].map {
         case ok: Ok with ChangeDetails =>
-          ChangeDetailsResponse(Some(in), cid, offset = ok.change.offset, length = ok.change.length)
-        case Ok(_)  => ChangeDetailsResponse(Some(in))
+          ChangeDetailsResponse(in.sessionId, cid, offset = ok.change.offset, length = ok.change.length)
+        case Ok(_)  => ChangeDetailsResponse(in.sessionId)
         case Err(c) => throw grpcFailure(c)
       }
   }
@@ -117,7 +105,7 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
   def subscribeToSessionEvents(in: ObjectId): Source[SessionEvent, NotUsed] = {
     val f = (sessions ? SessionOp(in.id, Session.Watch)).mapTo[Result].map {
       case ok: Ok with Session.Events =>
-        ok.stream.map(u => SessionEvent(Some(ObjectId(u.id))))
+        ok.stream.map(u => SessionEvent(u.id))
       case _ => Source.failed(grpcFailure(Status.UNKNOWN))
     }
     Await.result(f, 1.second)
@@ -127,7 +115,7 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
     case Viewport.Id(sid, vid) =>
       val f = (sessions ? ViewportOp(sid, vid, Viewport.Watch)).mapTo[Result].map {
         case ok: Ok with Viewport.Events =>
-          ok.stream.map(u => ViewportEvent(Some(ObjectId(u.id)), serial = u.change.map(_.id)))
+          ok.stream.map(u => ViewportEvent(u.id, serial = u.change.map(_.id)))
         case _ => Source.failed(grpcFailure(Status.UNKNOWN))
       }
       Await.result(f, 1.second)
@@ -143,6 +131,12 @@ class EditorService(implicit val system: ActorSystem, implicit val mat: Material
   def pauseViewportEvents(in: ObjectId): Future[ObjectId] = grpcFailFut(Status.UNIMPLEMENTED)
 
   def resumeViewportEvents(in: ObjectId): Future[ObjectId] = grpcFailFut(Status.UNIMPLEMENTED)
+
+  def getLastChange(in: ObjectId): Future[ChangeDetailsResponse] = grpcFailFut(Status.UNIMPLEMENTED)
+
+  def getLastUndo(in: ObjectId): Future[ChangeDetailsResponse] = grpcFailFut(Status.UNIMPLEMENTED)
+
+  def getComputedFileSize(in: ObjectId): Future[ComputedFileSizeResponse] = grpcFailFut(Status.UNIMPLEMENTED)
 }
 
 object EditorService {

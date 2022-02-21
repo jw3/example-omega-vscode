@@ -26,8 +26,8 @@ function getVersion(c: EditorClient): Promise<string> {
     })
 }
 
-function newSession(c: EditorClient, path: string | undefined): Promise<ObjectId> {
-    return new Promise<ObjectId>((resolve, reject) => {
+function newSession(c: EditorClient, path: string | undefined): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
         let request = new CreateSessionRequest()
         if(path) request.setFilePath(path)
         c.createSession(request, (err, r) => {
@@ -44,8 +44,8 @@ function newSession(c: EditorClient, path: string | undefined): Promise<ObjectId
     })
 }
 
-function newViewport(id: string, c: EditorClient, sid: ObjectId, offset: number, capacity: number): Promise<ObjectId> {
-    return new Promise<ObjectId>((resolve, reject) => {
+function newViewport(id: string, c: EditorClient, sid: string, offset: number, capacity: number): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
         let request = new CreateViewportRequest();
         request.setViewportIdDesired(id)
         request.setSessionId(sid);
@@ -62,6 +62,12 @@ function newViewport(id: string, c: EditorClient, sid: ObjectId, offset: number,
             return resolve(id);
         });
     })
+}
+
+function oidFor(id: string): ObjectId {
+    let oid = new ObjectId()
+    oid.setId(id)
+    return oid
 }
 
 export function activate(ctx: vscode.ExtensionContext) {
@@ -84,10 +90,12 @@ export function activate(ctx: vscode.ExtensionContext) {
             panel.webview.postMessage({ command: 'version', text: v });
 
             let s = await newSession(c, "build.sbt");
-            panel.webview.postMessage({ command: 'session', text: s.getId() });
+            panel.webview.postMessage({ command: 'session', text: s });
 
             let vpin = await newViewport("input", c, s, 0, 1000);
             let vp1 = await newViewport("1", c, s, 0, 64);
+            let vp1Oid = oidFor(vp1)
+
             let vp2 = await newViewport("2", c, s, 64, 64);
             let vp3 = await newViewport("3", c, s, 128, 64);
 
@@ -101,7 +109,7 @@ export function activate(ctx: vscode.ExtensionContext) {
                 }
             });
 
-            c.subscribeToViewportEvents(vp1).on('data', () => {
+            c.subscribeToViewportEvents(vp1Oid).on('data', () => {
                 let vpdr1 = new ViewportDataRequest()
                 vpdr1.setViewportId(vp1)
                 c.getViewportData(vpdr1, (err, r) => {
@@ -115,7 +123,7 @@ export function activate(ctx: vscode.ExtensionContext) {
                     }
                 });
             })
-            c.subscribeToViewportEvents(vp1).on('data', () => {
+            c.subscribeToViewportEvents(vp1Oid).on('data', () => {
                 let vpdr2 = new ViewportDataRequest()
                 vpdr2.setViewportId(vp2)
                 c.getViewportData(vpdr2, (err, r) => {
@@ -126,7 +134,7 @@ export function activate(ctx: vscode.ExtensionContext) {
                     }
                 });
             })
-            c.subscribeToViewportEvents(vp1).on('data', () => {
+            c.subscribeToViewportEvents(vp1Oid).on('data', () => {
                 let vpdr3 = new ViewportDataRequest()
                 vpdr3.setViewportId(vp3)
                 c.getViewportData(vpdr3, (err, r) => {

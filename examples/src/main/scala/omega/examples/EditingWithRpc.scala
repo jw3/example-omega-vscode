@@ -4,7 +4,16 @@ import akka.actor.ActorSystem
 import akka.grpc.GrpcClientSettings
 import com.google.protobuf.ByteString
 import omega.grpc.server.EditorService
-import omega_edit._
+import omega_edit.{
+  ChangeKind,
+  ChangeRequest,
+  CreateSessionRequest,
+  CreateViewportRequest,
+  Editor,
+  EditorClient,
+  ObjectId,
+  ViewportDataRequest
+}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
@@ -35,19 +44,19 @@ object Demonstration {
 
     for {
       s <- editor.createSession(CreateSessionRequest(Some("build.sbt")))
-      _ = println(s.getSessionId.id)
-      _ = editor.subscribeToSessionEvents(s.getSessionId).runForeach(_ => println(".:Session change event:."))
+      _ = println(s.sessionId)
+      _ = editor.subscribeToSessionEvents(ObjectId(s.sessionId)).runForeach(_ => println(".:Session change event:."))
       v <- editor.createViewport(CreateViewportRequest(s.sessionId, 1000))
-      _ = println(v.getViewportId.id)
+      _ = println(v.viewportId)
       d <- editor.getViewportData(ViewportDataRequest(v.viewportId))
       _ = println(s"[source data] ${d.data.toStringUtf8.take(20)}...")
-      _ = editor.subscribeToViewportEvents(v.getViewportId).runForeach(_ => println(".:Viewport change event:."))
+      _ = editor.subscribeToViewportEvents(ObjectId(v.viewportId)).runForeach(_ => println(".:Viewport change event:."))
       _ <- editor.submitChange(
         ChangeRequest(s.sessionId, ChangeKind.CHANGE_OVERWRITE, 0, 0, Some(ByteString.copyFromUtf8("********")))
       )
       d <- editor.getViewportData(ViewportDataRequest(v.viewportId))
       _ = println(s"[edited data] ${d.data.toStringUtf8.take(20)}...")
-      _ <- editor.getViewportData(ViewportDataRequest(None)).recover {
+      _ <- editor.getViewportData(ViewportDataRequest("")).recover {
         case e =>
           // expecting viewport id required message
           println(s"err: $e")
