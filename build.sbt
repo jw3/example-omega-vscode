@@ -33,7 +33,7 @@ lazy val examples = project
   )
   .enablePlugins(commonPlugins: _*)
 
-val omegaEditVersion = "0.7.0-22-g96a9db5"
+val omegaEditVersion = "0.7.0-32-gf4f9d5d"
 lazy val grpc = project
   .in(file("grpc"))
   .settings(commonSettings)

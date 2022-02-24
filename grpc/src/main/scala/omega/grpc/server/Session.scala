@@ -67,7 +67,7 @@ class Session(session: api.Session, events: EventStream, cb: SessionCallback) ex
       }
 
     case Push(data) =>
-      session.push(data)
+      session.insert(data, 0)
       sender() ! Ok(sessionId)
 
     case Insert(data, offset) =>

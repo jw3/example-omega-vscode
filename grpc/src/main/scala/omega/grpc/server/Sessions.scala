@@ -42,7 +42,7 @@ object Sessions {
   private def sessionFor(path: Option[Path], cb: SessionCallback): api.Session = path match {
     case None =>
       val session = OmegaEdit.newSessionCb(None, cb)
-      session.push(List.fill(10000)(" ").mkString)
+      session.insert(List.fill(10000)(" ").mkString, 0)
       session
     case path => OmegaEdit.newSessionCb(path, cb)
   }
