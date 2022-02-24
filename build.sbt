@@ -43,7 +43,8 @@ lazy val grpc = project
       "com.ctc" %% "omega-edit" % omegaEditVersion,
       "com.ctc" %% "omega-edit-native" % omegaEditVersion classifier s"$arch"
     ),
-    resolvers += Resolver.mavenLocal
+    resolvers += Resolver.mavenLocal,
+    Compile / PB.protoSources += file("client")
   )
   .enablePlugins(commonPlugins: _*)
   .enablePlugins(AkkaGrpcPlugin)
