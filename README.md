@@ -5,6 +5,8 @@ example omega edit extension
 
 Example VS Code plugin that uses Scala [Omega Edit](https://github.com/scholarsmate/omega-edit) bindings to demonstrate interaction over both gRPC.
 
+Archived: Proof of concept, eventually implemented in https://github.com/apache/daffodil-vscode
+
 ## areas for improvement
 - the proto file is currently duplicated between the server and client projects
   - the proto compilation for the client wants to create a nested path based on the input directory which complicates sharing it from a central location
