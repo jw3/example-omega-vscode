@@ -1,6 +1,8 @@
 example omega edit extension
 ===
 
+![gif](doc/demo.gif)
+
 Example VS Code plugin that uses Scala [Omega Edit](https://github.com/scholarsmate/omega-edit) bindings to demonstrate interaction over both gRPC.
 
 ## areas for improvement
@@ -33,9 +35,6 @@ code --extensionDevelopmentPath=<this-project-dir>
 ```
 
 Type omega at the command palette (`ctrl+shift+p`)
-
-
-![gif](doc/demo.gif)
 
 ### references
 - https://github.com/scholarsmate/omega-edit
